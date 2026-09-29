@@ -1,0 +1,51 @@
+# Example Kubernetes deployment. Assumes a PostgreSQL service, a Kafka service, and a
+# Secret named inventory-db holding DB_USER / DB_PASSWORD already exist in the namespace.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-movement-service
+  labels:
+    app: inventory-movement-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: inventory-movement-service
+  template:
+    metadata:
+      labels:
+        app: inventory-movement-service
+    spec:
+      containers:
+        - name: app
+          image: inventory-movement-service:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: postgres
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/inventory
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+          envFrom:
+            - secretRef:
+                name: inventory-db
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 768Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 15

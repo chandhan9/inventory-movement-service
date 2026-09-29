@@ -1,0 +1,17 @@
+# Activated with SPRING_PROFILES_ACTIVE=postgres (used by docker-compose and Kubernetes).
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/inventory}
+    username: ${DB_USER:inventory}
+    password: ${DB_PASSWORD:inventory}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+
+inventory:
+  events:
+    kafka:
+      enabled: true
