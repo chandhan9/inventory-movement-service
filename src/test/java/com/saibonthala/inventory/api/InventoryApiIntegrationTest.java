@@ -17,7 +17,9 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
 
 /**
  * End-to-end tests through the REST layer, service, JPA, Flyway schema and cache,
@@ -179,6 +181,18 @@ class InventoryApiIntegrationTest {
 
         mockMvc.perform(get("/api/v1/inventory/{sku}", "DOES-NOT-EXIST"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("stock can be returned as XML when the client asks for it (content negotiation)")
+    void stockAsXml() throws Exception {
+        receive(store, 7, key()).andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/v1/inventory/{sku}", sku).accept(MediaType.APPLICATION_XML))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_XML))
+                .andExpect(xpath("/StockSummary/sku").string(sku))
+                .andExpect(xpath("/StockSummary/totalOnHand").string("7"));
     }
 
     @Test

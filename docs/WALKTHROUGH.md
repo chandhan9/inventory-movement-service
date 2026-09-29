@@ -92,9 +92,17 @@ Kafka. That's the first item on the roadmap.
 
 ### Dependency inversion (the "D" in SOLID)
 `InventoryService` depends on the `InventoryEventPublisher` **interface**, not Kafka.
-Kafka or logging is chosen by configuration (`@ConditionalOnProperty`). Swapping Kafka for
-AWS SQS means writing one new class; the service doesn't change. It also keeps tests fast
-(no Kafka needed).
+Logging, Kafka, or AWS SQS is chosen by one property, `inventory.events.publisher`
+(`@ConditionalOnProperty`). Adding SQS support meant writing one new class
+(`SqsInventoryEventPublisher`); the service didn't change. It also keeps tests fast
+(no Kafka or AWS needed). This is also the **Strategy pattern**: interchangeable
+implementations behind one interface.
+
+*Kafka vs SQS (common question):* Kafka is a distributed log. Messages are kept for a
+retention period, many consumer groups can each read the whole stream, and ordering is
+guaranteed per partition. SQS is a managed queue. Each message is processed by one consumer
+and deleted, there's nothing to operate, and ordering needs a FIFO queue. Kafka suits event
+streams many teams consume; SQS suits simple work queues.
 
 ### SOLID quick reference
 - **S**ingle responsibility: controller = HTTP, service = business rules, repository = data access, entity = its own invariants (`StockLevel.apply`).
@@ -102,6 +110,17 @@ AWS SQS means writing one new class; the service doesn't change. It also keeps t
 - **L**iskov: any `InventoryEventPublisher` implementation can replace another.
 - **I**nterface segregation: the publisher interface has one method.
 - **D**ependency inversion: see above; all dependencies are injected via constructors.
+
+### Design patterns used
+- **Repository**: Spring Data interfaces hide SQL/JPA from the service.
+- **Strategy**: `InventoryEventPublisher` with logging / Kafka / SQS implementations.
+- **DTO**: request/response `record`s keep the API separate from the JPA entities.
+- **Dependency Injection**: constructor injection everywhere, which makes classes easy to unit test.
+
+### JSON and XML (content negotiation)
+Spring MVC picks the response format from the `Accept` header. With `jackson-dataformat-xml`
+on the classpath, the same endpoint returns JSON by default or XML for `Accept: application/xml`.
+There's a test for this in `InventoryApiIntegrationTest.stockAsXml`.
 
 ### Errors (RFC 7807)
 `ApiExceptionHandler` turns exceptions into consistent problem-detail JSON with the right

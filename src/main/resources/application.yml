@@ -36,9 +36,10 @@ management:
 
 inventory:
   events:
-    topic: inventory-movements
-    kafka:
-      enabled: false
+    publisher: logging          # logging | kafka | sqs
+    topic: inventory-movements  # Kafka topic
+    sqs:
+      queue-url: ${SQS_QUEUE_URL:}
 
 springdoc:
   swagger-ui:

@@ -13,5 +13,4 @@ spring:
 
 inventory:
   events:
-    kafka:
-      enabled: true
+    publisher: ${EVENT_PUBLISHER:kafka}   # set EVENT_PUBLISHER=sqs and SQS_QUEUE_URL to use AWS SQS

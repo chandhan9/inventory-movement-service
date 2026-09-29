@@ -7,12 +7,12 @@ centers. Every stock change is recorded in an append-only **ledger**, published 
 
 ## Features
 
-- **REST API (JSON)** for receipts, sales, cycle-count adjustments, and store-to-store / DC-to-store transfers
+- **REST API (JSON, with XML via content negotiation)** for receipts, sales, cycle-count adjustments, and store-to-store / DC-to-store transfers
 - **Ledger transaction validation**: stock can never go negative, transfers are atomic, and a reconciliation endpoint rebuilds balances from the ledger
 - **Idempotent writes**: every movement carries an idempotency key, so client retries are never applied twice
 - **Optimistic locking** (`@Version`) to prevent lost updates under concurrent requests
 - **Caching with correct invalidation**: stock lookups are cached in Caffeine and evicted only *after* the database commit
-- **Event streaming**: movements are published to Kafka after commit, keyed by SKU to preserve per-SKU ordering
+- **Event streaming**: movements are published after commit to **Kafka** (keyed by SKU to preserve per-SKU ordering) or **AWS SQS**, selected by configuration
 - **Observability**: Spring Boot Actuator health/readiness/liveness probes and Prometheus metrics (movements by type, rejections, publish failures, reconciliation mismatches)
 - **Database migrations** with Flyway (PostgreSQL in Docker, H2 for zero-setup local runs and tests)
 - **CI/CD** with GitHub Actions: build, test, and Docker image on every push
@@ -21,7 +21,7 @@ centers. Every stock change is recorded in an append-only **ledger**, published 
 
 ## Tech stack
 
-Java 21 · Spring Boot 3 · Spring Data JPA / Hibernate · PostgreSQL · H2 · Flyway · Apache Kafka ·
+Java 21 · Spring Boot 3 · Spring Data JPA / Hibernate · PostgreSQL · H2 · Flyway · Apache Kafka · AWS SQS (AWS SDK v2) · JSON / XML ·
 Caffeine · Micrometer / Prometheus · JUnit 5 · MockMvc · Docker · Docker Compose · Kubernetes · GitHub Actions · AWS (EC2)
 
 ## Architecture
@@ -101,6 +101,23 @@ Watch the Kafka events (with Docker Compose running):
 ```bash
 docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server kafka:9092 --topic inventory-movements --from-beginning
+```
+
+### Choosing the event publisher
+
+| `inventory.events.publisher` | Where events go |
+|---|---|
+| `logging` (default) | Application log, for local runs and tests |
+| `kafka` (default in the `postgres` profile) | Kafka topic `inventory-movements` |
+| `sqs` | AWS SQS queue; set `SQS_QUEUE_URL` and AWS credentials/region |
+
+To use SQS with Docker Compose, set `EVENT_PUBLISHER=sqs`, `SQS_QUEUE_URL`, `AWS_REGION`,
+`AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY` on the `app` service (or use an EC2 instance role).
+
+Any read endpoint returns XML instead of JSON when the request has `Accept: application/xml`:
+
+```bash
+curl -H 'Accept: application/xml' localhost:8080/api/v1/inventory/BOOT-001
 ```
 
 ## API

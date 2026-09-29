@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
  * event for the same SKU lands on the same partition and is consumed in order.
  */
 @Component
-@ConditionalOnProperty(prefix = "inventory.events.kafka", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "inventory.events", name = "publisher", havingValue = "kafka")
 public class KafkaInventoryEventPublisher implements InventoryEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaInventoryEventPublisher.class);

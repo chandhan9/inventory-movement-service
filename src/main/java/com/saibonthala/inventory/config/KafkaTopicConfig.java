@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 
 @Configuration
-@ConditionalOnProperty(prefix = "inventory.events.kafka", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "inventory.events", name = "publisher", havingValue = "kafka")
 public class KafkaTopicConfig {
 
     @Bean

@@ -5,9 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-/** Default publisher for local development and tests, when Kafka is disabled. */
+/** Default publisher for local development and tests (inventory.events.publisher=logging). */
 @Component
-@ConditionalOnProperty(prefix = "inventory.events.kafka", name = "enabled", havingValue = "false", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "inventory.events", name = "publisher", havingValue = "logging", matchIfMissing = true)
 public class LoggingInventoryEventPublisher implements InventoryEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(LoggingInventoryEventPublisher.class);
